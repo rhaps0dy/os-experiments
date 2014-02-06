@@ -10,19 +10,29 @@ int** A;
 int** B;
 int** C;
 
+int nthreads;
 
-void* multiply( void* param ) {
-    int i,j;
-    int r = * (int*)param;
 
-    printf("Started Thread %d\n",r);
-    for(i=0;i<Cm;i++) {
-        C[r][i] = 0;
-        for(j=0;j<Am;j++) {
-            C[r][i] += A[r][j]*B[j][i]; 
-        }
-    }
-    return 0;
+void *multThread(void *param)
+{
+	int i, j, k;
+	int n = * (int *) param;
+	printf("Started thread %d\n", n);
+	i=n%Cm;
+	j=n/Cm;
+	while(j<Cn)
+	{
+		C[j][i] = 0;
+		for(k=0; k<Am; k++)
+			C[j][i] += A[j][k]*B[k][i];
+		i += nthreads;
+		if(i>=Cm)
+		{
+			i = i%Cm;
+			j++;
+		}
+	}
+	return NULL;
 }
 
 
@@ -80,10 +90,12 @@ int main(int argc, char* argv[])
 
     int* row;
 
-    if(argc != 4) {
-        printf("usage: %s A.txt B.txt C.txt\n", argv[0]);
+    if(argc != 5) {
+        printf("usage: %s A.txt B.txt C.txt nthreads\n", argv[0]);
         return -1;
     }
+
+    nthreads = atoi(argv[4]);
  
     /* 1) Create two processes that will read A and B matrices
     /    Create also the two necessary pipes with associated file
@@ -173,21 +185,21 @@ int main(int argc, char* argv[])
 
     /* create the structures holding the threads */
     
-    tid = malloc(Cn * sizeof(pthread_t));
-    attr = malloc(Cn * sizeof(pthread_attr_t));
+    tid = malloc(nthreads * sizeof(pthread_t));
+    attr = malloc(nthreads * sizeof(pthread_attr_t));
 
     
     /* 8) Create the threads */
-    row = malloc(Cn * sizeof(int));
-    for(i=0; i<Cn; i++)
+    row = malloc(nthreads * sizeof(int));
+    for(i=0; i<nthreads; i++)
     {
 	    row[i] = i;
 	    pthread_attr_init(&attr[i]);
-	    pthread_create(&tid[i], &attr[i], multiply, &row[i]);
+	    pthread_create(&tid[i], &attr[i], multThread, &row[i]);
     }
     
     /* 9) join the threads */
-    for(i=0; i<Cn; i++)
+    for(i=0; i<nthreads; i++)
 	    pthread_join(tid[i], NULL);
     
     /* 10) write the result */
