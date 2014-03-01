@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         strcpy(arg,"");
         if (strchr(cmd, ' ') != NULL) sscanf(cmd,"%s %s",role,arg);
         else sscanf(cmd,"%s",role);
-        if(strcmp(role,"end") == 0) { bEnd = 1; break; }
+        if(strcmp(role,"end") == 0 || strcmp(role, "exit")==0) { bEnd = 1; break; }
         
         //fill the args we will pass to the child programs
         getcwd(programpath, 80);
